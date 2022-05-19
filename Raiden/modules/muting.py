@@ -83,6 +83,65 @@ def mute(update, context):
 @user_admin
 @loggable
 @typing_action
+def gifmute(update, context):
+    chat = update.effective_chat  # type: Optional[Chat]
+    user = update.effective_user  # type: Optional[User]
+    message = update.effective_message  # type: Optional[Message]
+    args = context.args
+
+    if user_can_ban(chat, user, context.bot.id) is False:
+        message.reply_text(
+            "You don't have enough rights to restrict someone from GifMuting!"
+        )
+        return ""
+
+    user_id = extract_user(message, args)
+    if not user_id:
+        message.reply_text(
+            "You'll need to either give me a username to Gif mute, or reply to someone to be Gif muted."
+        )
+        return ""
+
+    if user_id == context.bot.id:
+        message.reply_text("Yeahh... I'm not Gifmuting myself!")
+        return ""
+
+    member = chat.get_member(int(user_id))
+
+    if member:
+        if is_user_admin(chat, user_id, member=member):
+            message.reply_text("Well i'm not gonna stop an admin from talking!")
+
+        elif member.can_send_animations is None or member.can_send_animations:
+            context.bot.restrict_chat_member(
+                chat.id, user_id, permissions=ChatPermissions(can_send_animations=False)
+            )
+            message.reply_text("👍🏻 Gif muted! 🤐")
+            return (
+                "<b>{}:</b>"
+                "\n#MUTE"
+                "\n<b>Admin:</b> {}"
+                "\n<b>User:</b> {}".format(
+                    html.escape(chat.title),
+                    mention_html(user.id, user.first_name),
+                    mention_html(member.user.id, member.user.first_name),
+                )
+            )
+
+        else:
+            message.reply_text("This user is already taped 🤐")
+    else:
+        message.reply_text("This user isn't in the chat!")
+
+    return ""
+
+
+
+
+@bot_admin
+@user_admin
+@loggable
+@typing_action
 def unmute(update, context):
     chat = update.effective_chat  # type: Optional[Chat]
     user = update.effective_user  # type: Optional[User]
